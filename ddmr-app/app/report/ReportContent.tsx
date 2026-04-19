@@ -254,12 +254,58 @@ export default function ReportContent() {
   const router = useRouter();
   const demoSlug = params.get("demo");
   const isDemo = demoSlug !== null && demoSlug !== "";
-  const data = demoSlug === "messer" ? DEMO_MESSER : DEMO;
+  const isGenerated = params.get("generated") === "1";
 
+  const [generatedData, setGeneratedData] = useState<any>(null);
   const [expanded, setExpanded] = useState<string|null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(()=>{const t=setTimeout(()=>setLoaded(true),300);return()=>clearTimeout(t);},[]);
+  useEffect(()=>{
+    if (isGenerated) {
+      try {
+        const raw = sessionStorage.getItem("ddmr_generated");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setGeneratedData({
+            ...parsed,
+            cin: "",
+            maturity: parsed.maturity || maturityLabel(parsed.composite),
+            verdictColor: parsed.verdictColor || scoreColor(parsed.composite).bar,
+            meta: {
+              incorporated: "",
+              founded: parsed.meta?.founded || "Not disclosed",
+              hq: parsed.meta?.hq || "Not disclosed",
+              employees: parsed.meta?.employees || "Not disclosed",
+              revenue: parsed.meta?.revenue || "Not disclosed",
+              rating: "",
+              countries: parsed.meta?.countries || "Not disclosed",
+              products: parsed.meta?.products || "Not disclosed",
+              customers: parsed.meta?.customers || "Not disclosed",
+              directors: "",
+            },
+          });
+        }
+      } catch {}
+    }
+    const t=setTimeout(()=>setLoaded(true),300);
+    return()=>clearTimeout(t);
+  },[isGenerated]);
+
+  if (isGenerated && !generatedData) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          <p className="text-slate-600 text-sm">Loading report...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const data = isGenerated ? generatedData : (demoSlug === "messer" ? DEMO_MESSER : DEMO);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -267,9 +313,9 @@ export default function ReportContent() {
       <nav className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={()=>router.push(isDemo?"/":"/dashboard")}
+            <button onClick={()=>router.push(isGenerated?"/dashboard":(isDemo?"/":"/dashboard"))}
               className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-sm transition">
-              <ArrowLeft size={15}/> {isDemo?"Back to Login":"Back"}
+              <ArrowLeft size={15}/> {isGenerated?"Back to Dashboard":(isDemo?"Back to Login":"Back")}
             </button>
             <div className="w-px h-4 bg-slate-200"/>
             <div className="flex items-center gap-2">
@@ -279,25 +325,32 @@ export default function ReportContent() {
               <span className="font-bold text-slate-800 text-sm">DDMR Tool</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {[
-              {icon:FileSpreadsheet,label:"Excel",ext:"xlsx",color:"text-emerald-600"},
-              {icon:FileText,label:"Word",ext:"docx",color:"text-blue-600"},
-              {icon:Presentation,label:"Deck",ext:"pptx",color:"text-orange-500"},
-              {icon:FileText,label:"PDF",ext:"pdf",color:"text-red-500"},
-            ].map(({icon:Icon,label,ext,color})=>(
-              <a key={ext} href={`/api/download?format=${ext}`} download
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 ${color} text-xs font-medium transition`}>
-                <Icon size={13}/>{label}
-              </a>
-            ))}
-          </div>
+          {!isGenerated && (
+            <div className="flex items-center gap-2">
+              {[
+                {icon:FileSpreadsheet,label:"Excel",ext:"xlsx",color:"text-emerald-600"},
+                {icon:FileText,label:"Word",ext:"docx",color:"text-blue-600"},
+                {icon:Presentation,label:"Deck",ext:"pptx",color:"text-orange-500"},
+                {icon:FileText,label:"PDF",ext:"pdf",color:"text-red-500"},
+              ].map(({icon:Icon,label,ext,color})=>(
+                <a key={ext} href={`/api/download?format=${ext}`} download
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 ${color} text-xs font-medium transition`}>
+                  <Icon size={13}/>{label}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        {/* Demo badge */}
-        {isDemo && (
+        {isGenerated && (
+          <div className="mb-6 px-4 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>
+            <strong>AI Generated</strong> — Report created by Claude AI using public signals. Verify findings independently before decision-making.
+          </div>
+        )}
+        {isDemo && !isGenerated && (
           <div className="mb-6 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"/>
             <strong>Live Demo</strong> — Real company data from MCA, ICRA, and public sources. No API keys required.
@@ -314,7 +367,8 @@ export default function ReportContent() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-slate-900">{data.company}</h1>
-                  <p className="text-slate-500 text-sm font-mono">{data.cin}</p>
+                  {data.cin && <p className="text-slate-500 text-sm font-mono">{data.cin}</p>}
+                  {data.sector && <p className="text-slate-400 text-xs mt-0.5">{data.sector}</p>}
                 </div>
               </div>
               <p className="text-slate-600 text-sm leading-relaxed max-w-2xl">{data.summary}</p>
@@ -332,18 +386,18 @@ export default function ReportContent() {
 
         {/* Meta grid */}
         <div className={`grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6 transition-all duration-500 delay-100 ${loaded?"opacity-100 translate-y-0":"opacity-0 translate-y-4"}`}>
-          {[
+          {([
             {label:"Founded",val:data.meta.founded},
             {label:"HQ",val:data.meta.hq},
             {label:"Revenue",val:data.meta.revenue},
             {label:"Employees",val:data.meta.employees},
-            {label:"Credit Rating",val:data.meta.rating},
+            data.meta.rating ? {label:"Credit Rating",val:data.meta.rating} : null,
             {label:"Countries",val:data.meta.countries},
             {label:"Products",val:data.meta.products},
             {label:"Customers",val:data.meta.customers},
-            {label:"Directors",val:"3 Active"},
-            {label:"Status",val:"Active"},
-          ].map(({label,val})=>(
+            data.meta.directors ? {label:"Directors",val:data.meta.directors} : null,
+            !isGenerated ? {label:"Status",val:"Active"} : null,
+          ] as ({label:string,val:string}|null)[]).filter((x): x is {label:string,val:string} => x !== null && !!x.val).map(({label,val})=>(
             <div key={label} className="bg-white rounded-xl border border-slate-100 px-4 py-3">
               <div className="text-slate-400 text-xs mb-0.5">{label}</div>
               <div className="text-slate-800 text-sm font-semibold truncate" title={val}>{val}</div>
@@ -355,7 +409,7 @@ export default function ReportContent() {
         <div className={`bg-white rounded-2xl border border-slate-100 p-6 mb-6 transition-all duration-500 delay-150 ${loaded?"opacity-100 translate-y-0":"opacity-0 translate-y-4"}`}>
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Key Findings</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {data.highlights.map((h,i)=>(
+            {data.highlights.map((h:any,i:number)=>(
               <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${h.type==="positive"?"bg-green-50":"bg-amber-50"}`}>
                 <span className={`text-lg leading-none ${h.type==="positive"?"text-green-500":"text-amber-500"}`}>
                   {h.type==="positive"?"✓":"⚠"}
@@ -368,7 +422,7 @@ export default function ReportContent() {
 
         {/* Dimension cards */}
         <div className="space-y-4">
-          {data.dimensions.map((d,di)=>{
+          {data.dimensions.map((d:any,di:number)=>{
             const c=scoreColor(d.score);
             const open=expanded===d.code;
             return (
@@ -412,7 +466,7 @@ export default function ReportContent() {
                   <div className="border-t border-slate-100 px-6 py-5 animate-fadeInUp">
                     <p className="text-slate-600 text-sm mb-5 leading-relaxed">{d.insight}</p>
                     <div className="space-y-3">
-                      {d.submetrics.map(sm=>{
+                      {d.submetrics.map((sm:any)=>{
                         const sc=scoreColor(sm.score);
                         return (
                           <div key={sm.code} className="flex items-start gap-4 p-3 rounded-xl bg-slate-50">
@@ -454,7 +508,7 @@ export default function ReportContent() {
           </div>
 
           <div className="space-y-4">
-            {data.nextActions.map((item, idx) => (
+            {data.nextActions.map((item:any, idx:number) => (
               <div key={idx} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                 <div className="flex items-stretch">
                   {/* Rank column */}
@@ -500,11 +554,17 @@ export default function ReportContent() {
         <div className="mt-8 p-5 rounded-2xl bg-slate-100 border border-slate-200">
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Data Sources</h3>
           <div className="flex flex-wrap gap-2">
-            {["MCA21 / ROC Coimbatore","ICRA Rationale Reports","Tracxn / Tofler","Janatics.com","janaticspneumatics.com","IMARC Group","AIA India","DSIR"].map(s=>(
+            {(isGenerated
+              ? ["Claude AI (claude-sonnet-4-6)","Public Company Website","LinkedIn","MCA21 Filings","News & Press Releases","Job Postings","Industry Reports"]
+              : ["MCA21 / ROC Coimbatore","ICRA Rationale Reports","Tracxn / Tofler","Janatics.com","janaticspneumatics.com","IMARC Group","AIA India","DSIR"]
+            ).map(s=>(
               <span key={s} className="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-medium">{s}</span>
             ))}
           </div>
-          <p className="text-slate-400 text-xs mt-3">Report generated {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})} · Based on publicly available information · Not investment advice</p>
+          <p className="text-slate-400 text-xs mt-3">
+            Report generated {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})} · Based on publicly available information ·{" "}
+            {isGenerated ? "AI-generated — verify independently before decisions" : "Not investment advice"}
+          </p>
         </div>
       </div>
     </div>
