@@ -249,38 +249,47 @@ function TrendIcon({t}:{t:string}){
   return <Minus size={14} className="text-slate-400"/>;
 }
 
+function getReportById(id: string): any | null {
+  try {
+    const reports: any[] = JSON.parse(localStorage.getItem("ddmr_reports") || "[]");
+    return reports.find(r => r.id === id) ?? null;
+  } catch { return null; }
+}
+
 export default function ReportContent() {
   const params = useSearchParams();
   const router = useRouter();
   const demoSlug = params.get("demo");
+  const reportId = params.get("id");
   const isDemo = demoSlug !== null && demoSlug !== "";
-  const isGenerated = params.get("generated") === "1";
+  const isGenerated = reportId !== null;
 
   const [generatedData, setGeneratedData] = useState<any>(null);
   const [expanded, setExpanded] = useState<string|null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [downloading, setDownloading] = useState<string|null>(null);
 
   useEffect(()=>{
-    if (isGenerated) {
+    if (reportId) {
       try {
-        const raw = sessionStorage.getItem("ddmr_generated");
-        if (raw) {
-          const parsed = JSON.parse(raw);
+        const stored = getReportById(reportId);
+        if (stored) {
+          const d = stored.data;
           setGeneratedData({
-            ...parsed,
-            cin: "",
-            maturity: parsed.maturity || maturityLabel(parsed.composite),
-            verdictColor: parsed.verdictColor || scoreColor(parsed.composite).bar,
+            ...d,
+            cin: d.cin || "",
+            maturity: d.maturity || maturityLabel(d.composite),
+            verdictColor: d.verdictColor || scoreColor(d.composite).bar,
             meta: {
               incorporated: "",
-              founded: parsed.meta?.founded || "Not disclosed",
-              hq: parsed.meta?.hq || "Not disclosed",
-              employees: parsed.meta?.employees || "Not disclosed",
-              revenue: parsed.meta?.revenue || "Not disclosed",
+              founded: d.meta?.founded || "Not disclosed",
+              hq: d.meta?.hq || "Not disclosed",
+              employees: d.meta?.employees || "Not disclosed",
+              revenue: d.meta?.revenue || "Not disclosed",
               rating: "",
-              countries: parsed.meta?.countries || "Not disclosed",
-              products: parsed.meta?.products || "Not disclosed",
-              customers: parsed.meta?.customers || "Not disclosed",
+              countries: d.meta?.countries || "Not disclosed",
+              products: d.meta?.products || "Not disclosed",
+              customers: d.meta?.customers || "Not disclosed",
               directors: "",
             },
           });
@@ -289,7 +298,7 @@ export default function ReportContent() {
     }
     const t=setTimeout(()=>setLoaded(true),300);
     return()=>clearTimeout(t);
-  },[isGenerated]);
+  },[reportId]);
 
   if (isGenerated && !generatedData) {
     return (
@@ -307,6 +316,26 @@ export default function ReportContent() {
 
   const data = isGenerated ? generatedData : (demoSlug === "messer" ? DEMO_MESSER : DEMO);
 
+  async function downloadGenerated(format: string) {
+    setDownloading(format);
+    try {
+      const res = await fetch("/api/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format, data }),
+      });
+      if (!res.ok) { setDownloading(null); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(data.company || "DDMR").replace(/[^a-z0-9]/gi, "_")}_DDMR.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    setDownloading(null);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Nav */}
@@ -315,7 +344,7 @@ export default function ReportContent() {
           <div className="flex items-center gap-4">
             <button onClick={()=>router.push(isGenerated?"/dashboard":(isDemo?"/":"/dashboard"))}
               className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-sm transition">
-              <ArrowLeft size={15}/> {isGenerated?"Back to Dashboard":(isDemo?"Back to Login":"Back")}
+              <ArrowLeft size={15}/> {isGenerated ? "Back to Dashboard" : (isDemo ? "Back to Login" : "Back")}
             </button>
             <div className="w-px h-4 bg-slate-200"/>
             <div className="flex items-center gap-2">
@@ -325,21 +354,29 @@ export default function ReportContent() {
               <span className="font-bold text-slate-800 text-sm">DDMR Tool</span>
             </div>
           </div>
-          {!isGenerated && (
-            <div className="flex items-center gap-2">
-              {[
-                {icon:FileSpreadsheet,label:"Excel",ext:"xlsx",color:"text-emerald-600"},
-                {icon:FileText,label:"Word",ext:"docx",color:"text-blue-600"},
-                {icon:Presentation,label:"Deck",ext:"pptx",color:"text-orange-500"},
-                {icon:FileText,label:"PDF",ext:"pdf",color:"text-red-500"},
-              ].map(({icon:Icon,label,ext,color})=>(
+          <div className="flex items-center gap-2">
+            {[
+              {icon:FileSpreadsheet,label:"Excel",ext:"xlsx",color:"text-emerald-600"},
+              {icon:FileText,label:"Word",ext:"docx",color:"text-blue-600"},
+              {icon:Presentation,label:"Deck",ext:"pptx",color:"text-orange-500"},
+              {icon:FileText,label:"PDF",ext:"pdf",color:"text-red-500"},
+            ].map(({icon:Icon,label,ext,color})=>(
+              isGenerated ? (
+                <button key={ext} onClick={()=>downloadGenerated(ext)} disabled={downloading !== null}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 ${color} text-xs font-medium transition disabled:opacity-50`}>
+                  {downloading === ext
+                    ? <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                    : <Icon size={13}/>}
+                  {label}
+                </button>
+              ) : (
                 <a key={ext} href={`/api/download?format=${ext}`} download
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 ${color} text-xs font-medium transition`}>
                   <Icon size={13}/>{label}
                 </a>
-              ))}
-            </div>
-          )}
+              )
+            ))}
+          </div>
         </div>
       </nav>
 

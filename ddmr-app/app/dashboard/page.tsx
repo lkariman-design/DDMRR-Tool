@@ -1,7 +1,49 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Globe, Search, ChevronRight, LogOut, Sparkles } from "lucide-react";
+import { Building2, Globe, Search, ChevronRight, LogOut, Sparkles, FileText, Trash2, ExternalLink } from "lucide-react";
+
+interface StoredReport {
+  id: string;
+  company: string;
+  sector: string;
+  composite: number;
+  maturity: string;
+  verdictColor: string;
+  generatedAt: string;
+  data: any;
+}
+
+function maturityLabel(s: number): string {
+  if (s >= 84) return "Future Ready";
+  if (s >= 67) return "Strategic";
+  if (s >= 34) return "Siloed";
+  return "Legacy";
+}
+function verdictColor(s: number): string {
+  if (s >= 84) return "#1d4ed8";
+  if (s >= 67) return "#16a34a";
+  if (s >= 34) return "#d97706";
+  return "#dc2626";
+}
+function genId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+function getReports(): StoredReport[] {
+  try { return JSON.parse(localStorage.getItem("ddmr_reports") || "[]"); } catch { return []; }
+}
+function saveReport(data: any): string {
+  const id = genId();
+  const ml = data.maturity || maturityLabel(data.composite);
+  const vc = data.verdictColor || verdictColor(data.composite);
+  const reports = getReports();
+  reports.unshift({ id, company: data.company, sector: data.sector, composite: data.composite, maturity: ml, verdictColor: vc, generatedAt: new Date().toISOString(), data });
+  localStorage.setItem("ddmr_reports", JSON.stringify(reports.slice(0, 30)));
+  return id;
+}
+function deleteReport(id: string) {
+  localStorage.setItem("ddmr_reports", JSON.stringify(getReports().filter(r => r.id !== id)));
+}
 
 const STEPS = [
   "Researching company profile...",
@@ -18,16 +60,27 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [generating, setGenerating] = useState(false);
   const [step, setStep] = useState(0);
+  const [generatingFor, setGeneratingFor] = useState("");
+  const [reports, setReports] = useState<StoredReport[]>([]);
+
+  useEffect(() => { setReports(getReports()); }, []);
 
   async function handleSignOut() {
     await fetch("/api/auth", { method: "DELETE" });
     router.push("/");
   }
 
+  function handleDelete(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    deleteReport(id);
+    setReports(getReports());
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!company.trim()) { setError("Please enter a company name."); return; }
     setError("");
+    setGeneratingFor(company.trim());
     setGenerating(true);
     setStep(0);
 
@@ -44,8 +97,8 @@ export default function DashboardPage() {
       clearInterval(interval);
       if (res.ok) {
         const data = await res.json();
-        sessionStorage.setItem("ddmr_generated", JSON.stringify(data));
-        router.push("/report?generated=1");
+        const id = saveReport(data);
+        router.push(`/report?id=${id}`);
       } else {
         const d = await res.json();
         setError(d.error || "Report generation failed. Please try again.");
@@ -67,15 +120,12 @@ export default function DashboardPage() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Generating Report</h2>
           <p className="text-slate-500 text-sm mb-8">
-            AI is analysing <strong className="text-slate-700">{company}</strong>
+            AI is analysing <strong className="text-slate-700">{generatingFor}</strong>
           </p>
-
           <div className="space-y-2 text-left mb-8">
             {STEPS.map((s, i) => (
               <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                i < step ? "opacity-40" :
-                i === step ? "bg-white border border-blue-200 shadow-sm" :
-                "opacity-20"
+                i < step ? "opacity-40" : i === step ? "bg-white border border-blue-200 shadow-sm" : "opacity-20"
               }`}>
                 {i < step ? (
                   <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
@@ -93,7 +143,6 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-
           <p className="text-slate-400 text-xs">This typically takes 20–40 seconds</p>
         </div>
       </div>
@@ -115,10 +164,10 @@ export default function DashboardPage() {
         </button>
       </nav>
 
-      <div className="max-w-2xl mx-auto px-6 py-16">
-        <div className="mb-10">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles size={15} className="text-blue-500"/>
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={14} className="text-blue-500"/>
             <span className="text-blue-600 text-sm font-semibold">AI-Powered Assessment</span>
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">New DDMR Report</h1>
@@ -127,8 +176,8 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-10">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Company Name <span className="text-red-500">*</span>
@@ -141,7 +190,6 @@ export default function DashboardPage() {
               />
               {error && <p className="text-red-500 text-xs mt-1.5">{error}</p>}
             </div>
-
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Company Website <span className="text-slate-400 font-normal">(optional)</span>
@@ -157,30 +205,54 @@ export default function DashboardPage() {
               </div>
               <p className="text-slate-400 text-xs mt-1.5">Providing the website improves analysis accuracy</p>
             </div>
-
-            <div className="pt-2">
-              <button type="submit"
-                className="w-full py-4 rounded-xl font-semibold text-white transition flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(135deg,#1a3a6e,#2563eb)" }}>
-                <Search size={16}/>
-                <span>Generate DDMR Report</span>
-                <ChevronRight size={16}/>
-              </button>
-            </div>
+            <button type="submit"
+              className="w-full py-4 rounded-xl font-semibold text-white transition flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg,#1a3a6e,#2563eb)" }}>
+              <Search size={16}/>
+              <span>Generate DDMR Report</span>
+              <ChevronRight size={16}/>
+            </button>
           </form>
         </div>
 
-        <div className="mt-8 p-5 rounded-2xl bg-blue-50 border border-blue-100">
-          <div className="flex items-start gap-3">
-            <Sparkles size={14} className="text-blue-500 flex-shrink-0 mt-0.5"/>
-            <div>
-              <p className="text-blue-800 text-sm font-semibold mb-1">What does the AI analyse?</p>
-              <p className="text-blue-700 text-xs leading-relaxed">
-                Strategy · Operations & Supply Chain · Sales & Marketing · Technology Adoption · Skills & Capabilities — all assessed from public signals: company website, LinkedIn, MCA filings, news, and job postings.
-              </p>
+        {/* Report history */}
+        {reports.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Generated Reports</h2>
+            <div className="space-y-2">
+              {reports.map(r => (
+                <div key={r.id}
+                  className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between hover:border-blue-200 hover:shadow-sm transition group">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#eff6ff" }}>
+                      <FileText size={17} className="text-blue-600"/>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-800 text-sm truncate">{r.company}</div>
+                      <div className="text-slate-400 text-xs truncate">{r.sector} · {new Date(r.generatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white" style={{ background: r.verdictColor }}>{r.composite}/100</span>
+                    <span className="text-xs text-slate-500 hidden sm:block">{r.maturity}</span>
+                    <button
+                      onClick={() => router.push(`/report?id=${r.id}`)}
+                      className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition"
+                      title="View report">
+                      <ExternalLink size={15}/>
+                    </button>
+                    <button
+                      onClick={e => handleDelete(r.id, e)}
+                      className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
+                      title="Delete report">
+                      <Trash2 size={15}/>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
