@@ -23,7 +23,12 @@
       "Bash(pkill -f \"next dev\")",
       "Bash(npm run *)",
       "Bash(curl -s -o /tmp/test.xlsx -w \"%{http_code} %{size_download}bytes\" \"http://localhost:3000/api/download?format=xlsx\")",
-      "Bash(curl -s -o /tmp/test.xlsx -w \"%{http_code} type:%{content_type} size:%{size_download}\" \"http://localhost:3000/api/download?format=xlsx\")"
+      "Bash(curl -s -o /tmp/test.xlsx -w \"%{http_code} type:%{content_type} size:%{size_download}\" \"http://localhost:3000/api/download?format=xlsx\")",
+      "Bash(pdftotext \"/Users/laaksandy/Documents/Claude-testing/DDMR/Inputs/Score_for_Dimension_\\(DDMR\\).pdf\" -)",
+      "Bash(curl -s -o /dev/null -w \"janatics: %{http_code}\\\\n\" \"http://localhost:3000/report?demo=janatics\")",
+      "Bash(curl -s -o /dev/null -w \"messer: %{http_code}\\\\n\" \"http://localhost:3000/report?demo=messer\")",
+      "Bash(curl -s -o /dev/null -w \"login: %{http_code}\\\\n\" \"http://localhost:3000\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3000/api/download?format=pdf\")"
     ]
   }
 }
