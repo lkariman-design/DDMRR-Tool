@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { existsSync, readFileSync } from "fs";
 import { execSync } from "child_process";
-import { readFileSync } from "fs";
 import path from "path";
-
-const ROOT = path.join(process.cwd(), "..");
 
 const CONFIG = {
   xlsx: {
@@ -36,12 +34,27 @@ export async function GET(req: NextRequest) {
   }
 
   const { script, file, mime } = CONFIG[format];
-  const scriptPath = path.join(ROOT, script);
-  const filePath   = path.join(ROOT, "output", file);
 
+  // On Vercel / production: serve pre-built static file from public/downloads
+  const staticPath = path.join(process.cwd(), "public", "downloads", file);
+  if (existsSync(staticPath)) {
+    const buffer = readFileSync(staticPath);
+    return new NextResponse(buffer, {
+      headers: {
+        "Content-Type": mime,
+        "Content-Disposition": `attachment; filename="${file}"`,
+        "Content-Length": String(buffer.length),
+      },
+    });
+  }
+
+  // Local dev fallback: regenerate via Python
   try {
+    const ROOT = path.join(process.cwd(), "..");
+    const scriptPath = path.join(ROOT, script);
+    const outputPath = path.join(ROOT, "output", file);
     execSync(`python3 "${scriptPath}"`, { cwd: ROOT, timeout: 30000 });
-    const buffer = readFileSync(filePath);
+    const buffer = readFileSync(outputPath);
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": mime,
