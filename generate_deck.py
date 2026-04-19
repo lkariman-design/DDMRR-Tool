@@ -1,17 +1,15 @@
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
+from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
-from pptx.util import Inches, Pt
-import math
 from datetime import date
 
 COMPANY   = "Janatics India Private Limited"
 CIN       = "U31103TZ1991PTC003409"
 DATE_STR  = date.today().strftime("%d %B %Y")
-COMPOSITE = 75.7
+COMPOSITE = 64
 
 DARK_BLUE  = RGBColor(0x1F, 0x38, 0x64)
 MID_BLUE   = RGBColor(0x2E, 0x75, 0xB6)
@@ -20,11 +18,19 @@ WHITE      = RGBColor(0xFF, 0xFF, 0xFF)
 GREEN      = RGBColor(0x00, 0xB0, 0x50)
 AMBER      = RGBColor(0xFF, 0xC0, 0x00)
 RED_C      = RGBColor(0xFF, 0x00, 0x00)
+BLUE_FR    = RGBColor(0x25, 0x63, 0xEB)
 DARK_GRAY  = RGBColor(0x40, 0x40, 0x40)
 
+def maturity_label(s):
+    if s >= 84: return "Future Ready"
+    if s >= 67: return "Strategic"
+    if s >= 34: return "Siloed"
+    return "Legacy"
+
 def score_color(s):
-    if s >= 75: return GREEN
-    if s >= 50: return AMBER
+    if s >= 84: return BLUE_FR
+    if s >= 67: return GREEN
+    if s >= 34: return AMBER
     return RED_C
 
 def add_text_box(slide, text, left, top, width, height,
@@ -37,8 +43,8 @@ def add_text_box(slide, text, left, top, width, height,
     p.alignment = align
     run = p.add_run()
     run.text = text
-    run.font.size  = Pt(font_size)
-    run.font.bold  = bold
+    run.font.size   = Pt(font_size)
+    run.font.bold   = bold
     run.font.italic = italic
     if color:
         run.font.color.rgb = color
@@ -48,7 +54,7 @@ def add_text_box(slide, text, left, top, width, height,
     return txBox
 
 def add_rect(slide, left, top, width, height, fill_color, line_color=None):
-    shape = slide.shapes.add_shape(1, left, top, width, height)  # MSO_SHAPE_TYPE.RECTANGLE = 1
+    shape = slide.shapes.add_shape(1, left, top, width, height)
     shape.fill.solid()
     shape.fill.fore_color.rgb = fill_color
     if line_color:
@@ -57,22 +63,16 @@ def add_rect(slide, left, top, width, height, fill_color, line_color=None):
         shape.line.fill.background()
     return shape
 
-# ── Presentation setup ─────────────────────────────────────────────────────────
-
 prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
-
 W = prs.slide_width
 H = prs.slide_height
-
-blank_layout = prs.slide_layouts[6]  # blank
+blank_layout = prs.slide_layouts[6]
 
 # ── Slide 1: Title ─────────────────────────────────────────────────────────────
 
 slide = prs.slides.add_slide(blank_layout)
-
-# Background
 add_rect(slide, 0, 0, W, H, DARK_BLUE)
 add_rect(slide, 0, Inches(4.8), W, Inches(2.7), MID_BLUE)
 
@@ -88,12 +88,11 @@ add_text_box(slide, f"CIN: {CIN}",
              Inches(0.8), Inches(2.9), Inches(11.7), Inches(0.5),
              font_size=12, color=LIGHT_BLUE, align=PP_ALIGN.CENTER)
 
-# Score callout
-add_rect(slide, Inches(4.9), Inches(3.8), Inches(3.5), Inches(1.2), GREEN)
+add_rect(slide, Inches(4.9), Inches(3.8), Inches(3.5), Inches(1.2), score_color(COMPOSITE))
 add_text_box(slide, f"{COMPOSITE}/100",
              Inches(4.9), Inches(3.8), Inches(3.5), Inches(0.7),
              font_size=32, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-add_text_box(slide, "COMPOSITE DDMR SCORE",
+add_text_box(slide, f"COMPOSITE DDMR SCORE — {maturity_label(COMPOSITE)}",
              Inches(4.9), Inches(4.5), Inches(3.5), Inches(0.4),
              font_size=10, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 
@@ -110,20 +109,20 @@ add_text_box(slide, "Company Snapshot",
              font_size=20, bold=True, color=WHITE)
 
 facts = [
-    ("Founded",            "1977 (brand) / 1991 (incorporated)"),
-    ("CIN",                "U31103TZ1991PTC003409"),
-    ("Headquarters",       "Coimbatore, Tamil Nadu"),
-    ("Additional Plants",  "Ahmedabad, Noida"),
-    ("Status",             "Active | ROC Coimbatore"),
-    ("Revenue (FY2025)",   "₹531 Crore"),
-    ("Employees",          "662 (Aug 2025)"),
-    ("Products",           "3,500+ SKUs"),
-    ("Customers",          "17,000+"),
-    ("Countries",          "42+"),
-    ("Subsidiaries",       "USA, Germany"),
-    ("Credit Rating",      "ICRA — Stable Outlook"),
-    ("R&D",                "DSIR-recognized"),
-    ("Industry",           "Pneumatics & Industrial Automation"),
+    ("Founded",           "1977 (brand) / 1991 (incorporated)"),
+    ("CIN",               "U31103TZ1991PTC003409"),
+    ("Headquarters",      "Coimbatore, Tamil Nadu"),
+    ("Additional Plants", "Ahmedabad, Noida"),
+    ("Status",            "Active | ROC Coimbatore"),
+    ("Revenue (FY2025)",  "₹531 Crore"),
+    ("Employees",         "662"),
+    ("Products",          "3,500+ SKUs"),
+    ("Customers",         "17,000+"),
+    ("Countries",         "42+"),
+    ("Subsidiaries",      "USA, Germany"),
+    ("Credit Rating",     "ICRA — Stable Outlook"),
+    ("R&D",               "DSIR-recognized"),
+    ("Industry",          "Pneumatics & Industrial Automation"),
 ]
 
 cols = [facts[:7], facts[7:]]
@@ -142,21 +141,20 @@ for ci, col in enumerate(cols):
 
 slide = prs.slides.add_slide(blank_layout)
 add_rect(slide, 0, 0, W, Inches(1.1), DARK_BLUE)
-add_text_box(slide, "DDMR Dimension Scorecard",
+add_text_box(slide, "DDMR Digital Maturity Scorecard",
              Inches(0.3), Inches(0.15), Inches(12.7), Inches(0.8),
              font_size=20, bold=True, color=WHITE)
 
-# Radar chart
 chart_data = ChartData()
 chart_data.categories = [
-    "Strategy &\nLeadership",
-    "Sales &\nMarketing",
+    "Strategy",
     "Operations &\nSupply Chain",
-    "Finance",
-    "Industry\nContext"
+    "Sales &\nMarketing",
+    "Technology\nAdoption",
+    "Skills &\nCapabilities",
 ]
-chart_data.add_series("Score", (81, 78, 78, 67, 75))
-chart_data.add_series("Benchmark (75)", (75, 75, 75, 75, 75))
+chart_data.add_series("Score", (70, 65, 55, 70, 60))
+chart_data.add_series("Benchmark (67)", (67, 67, 67, 67, 67))
 
 chart = slide.shapes.add_chart(
     XL_CHART_TYPE.RADAR_FILLED,
@@ -165,25 +163,25 @@ chart = slide.shapes.add_chart(
 ).chart
 chart.has_legend = True
 
-# Score boxes on right
-dims = [
-    ("SL", "Strategy & Leadership",     81),
-    ("SM", "Sales & Marketing",         78),
-    ("OSC","Operations & Supply Chain", 78),
-    ("FIN","Finance",                   67),
-    ("IC", "Industry Context",          75),
+dims_summary = [
+    ("ST",  "Strategy",                  70),
+    ("OSC", "Operations & Supply Chain", 65),
+    ("SM",  "Sales & Marketing",         55),
+    ("TA",  "Technology Adoption",       70),
+    ("SC",  "Skills & Capabilities",     60),
 ]
-for i, (code, name, score) in enumerate(dims):
+for i, (code, name, score) in enumerate(dims_summary):
     ty = Inches(1.4 + i * 1.1)
     add_rect(slide, Inches(8.3), ty, Inches(0.6), Inches(0.7), score_color(score))
     add_text_box(slide, str(score), Inches(8.3), ty, Inches(0.6), Inches(0.7),
                  font_size=16, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
     add_rect(slide, Inches(8.95), ty, Inches(4.0), Inches(0.7), LIGHT_BLUE)
-    add_text_box(slide, f"{code}: {name}", Inches(9.0), ty + Inches(0.08),
+    add_text_box(slide, f"{code}: {name}  [{maturity_label(score)}]",
+                 Inches(9.0), ty + Inches(0.08),
                  Inches(3.9), Inches(0.55), font_size=10, color=DARK_BLUE)
 
-add_rect(slide, Inches(8.3), Inches(7.0), Inches(4.65), Inches(0.45), MID_BLUE)
-add_text_box(slide, f"Composite Score: {COMPOSITE}/100  —  Strong",
+add_rect(slide, Inches(8.3), Inches(7.0), Inches(4.65), Inches(0.45), score_color(COMPOSITE))
+add_text_box(slide, f"Composite Score: {COMPOSITE}/100  —  {maturity_label(COMPOSITE)}",
              Inches(8.3), Inches(7.0), Inches(4.65), Inches(0.45),
              font_size=11, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 
@@ -191,101 +189,98 @@ add_text_box(slide, f"Composite Score: {COMPOSITE}/100  —  Strong",
 
 dimension_slides = [
     {
-        "code": "SL", "name": "Strategy & Leadership", "score": 81, "weight": "25%",
+        "code": "ST", "name": "Strategy", "score": 70, "weight": "20%",
         "bullets": [
-            "Founded 1977 — 49-year operational track record, incorporated 1991",
-            "3 active directors | AGM Sept 2024 | ROC Coimbatore filings current",
-            "Global footprint: 42+ countries | Subsidiaries: USA and Germany",
-            "DSIR-recognized R&D division | 200 global distribution partners",
-            "Strategic pivot: electric actuators, robotics, Industry 4.0 products",
-            "ICRA-rated debt profile | Stable outlook | Healthy debt protection",
+            "Product portfolio pivot to I4.0 equipment — electric actuators, smart sensors, robotics",
+            "DSIR-recognized R&D division — structured technology investment commitment",
+            "No formal digital transformation roadmap or DX strategy publicly disclosed",
+            "No chief digital officer or digital leadership appointment evidenced",
+            "Technology partnerships limited to DSIR; no digital ecosystem alliances disclosed",
+            "Innovation pipeline: incremental product extension; no open innovation signals",
         ],
-        "sub_scores": [("SL01 Tenure",90),("SL02 Directors",75),("SL03 Governance",80),
-                       ("SL04 Debt",78),("SL05 Strategy",82),("SL06 Global",88)],
-        "highlight": "49-year brand | Global in 42 countries",
-        "risk": "No public ESG / independent director disclosures",
+        "sub_scores": [("ST01 DX Strategy",65),("ST02 Leadership Vision",72),("ST03 Investment",75),
+                       ("ST04 Tech Partnerships",68),("ST05 Innovation",70)],
+        "highlight": "DSIR R&D + I4.0 product pivot signal digital leadership awareness",
+        "risk": "No formal DX roadmap or strategy publicly articulated",
     },
     {
-        "code": "SM", "name": "Sales & Marketing", "score": 78, "weight": "20%",
+        "code": "OSC", "name": "Operations & Supply Chain", "score": 65, "weight": "20%",
         "bullets": [
-            "FY2025 Revenue: ₹531 Crore (₹507.9 Cr FY2024 → 4% YoY growth)",
-            "Industry CAGR: 6.9% — Janatics growing slightly below sector pace",
-            "17,000+ customers across 7 industries — low concentration risk",
-            "200 global distribution partners | 3 manufacturing plants nationally",
-            "Own-brand (Janatics) | AIA India member | 49-year brand equity",
-            "Digital commerce channel not yet activated — potential growth lever",
+            "70,000 sqm Coimbatore HQ | Ahmedabad + Noida plants — strong physical footprint",
+            "CNC machining, casting, surface treatment — physical automation well established",
+            "No ERP, MES, or supply chain visibility platform publicly disclosed",
+            "No Industry 4.0 certification or smart factory initiative announced",
+            "I4.0 product portfolio demonstrates concept awareness but internal adoption unclear",
+            "Quality management practices consistent with ICRA compliance; formal system unconfirmed",
         ],
-        "sub_scores": [("SM01 Rev Growth",55),("SM02 Scale",80),("SM03 Customers",90),
-                       ("SM04 Distribution",85),("SM05 Brand",80)],
-        "highlight": "17,000+ customers | 7 industries | Global distribution",
-        "risk": "Revenue growth 4% vs industry CAGR 6.9%",
+        "sub_scores": [("OSC01 Mfg Readiness",60),("OSC02 SC Visibility",50),("OSC03 Automation",70),
+                       ("OSC04 Quality Mgmt",72),("OSC05 I4.0 Integration",73)],
+        "highlight": "Strong physical automation; CNC, casting, 3 plant locations",
+        "risk": "No ERP/MES/SCM platform or I4.0 certification evidenced publicly",
     },
     {
-        "code": "OSC", "name": "Operations & Supply Chain", "score": 78, "weight": "20%",
+        "code": "SM", "name": "Sales & Marketing", "score": 55, "weight": "20%",
         "bullets": [
-            "70,000 sqm manufacturing facility in Coimbatore | Ahmedabad + Noida plants",
-            "3,500+ distinct SKUs — single-source supplier capability for OEMs",
-            "Advanced CNC machining, casting, surface treatment infrastructure",
-            "DSIR-recognized R&D — proprietary product development capability",
-            "Expanding into electric actuators, sensors, robotic systems",
-            "Internal digitization (ERP, MES) not publicly disclosed",
+            "Two product websites (janatics.com / janaticspneumatics.com) — functional, not digital-first",
+            "17,000+ customers across 7 industries — managed at scale; CRM tool undisclosed",
+            "No B2B e-commerce, digital ordering portal, or online pricing identified",
+            "Limited LinkedIn / social media engagement signals from public sources",
+            "No paid digital marketing, content strategy, or SEO investment evidenced",
+            "200 global distribution partners — relationship-driven, not channel-digital",
         ],
-        "sub_scores": [("OSC01 Scale",85),("OSC02 Products",90),("OSC03 R&D",82),
-                       ("OSC04 GST",72),("OSC05 Digital",65)],
-        "highlight": "3,500+ SKUs | 70,000 sqm plant | DSIR R&D",
-        "risk": "Supply chain digitization level undisclosed",
+        "sub_scores": [("SM01 Digital Presence",60),("SM02 Social Media",40),("SM03 E-commerce",45),
+                       ("SM04 Digital Marketing",55),("SM05 CRM / Data",75)],
+        "highlight": "17,000+ customers managed; CRM implied at scale",
+        "risk": "No digital sales channel, e-commerce, or social marketing strategy",
     },
     {
-        "code": "FIN", "name": "Finance", "score": 67, "weight": "25%",
+        "code": "TA", "name": "Technology Adoption", "score": 70, "weight": "20%",
         "bullets": [
-            "FY2025 Revenue: ₹531 Cr | Employee productivity: ₹80L per employee",
-            "ICRA-rated | Stable outlook | Multiple reaffirmations (2021–2025)",
-            "Paid-up capital ₹26.5 Cr | Authorized ₹30 Cr | Self-funded growth",
-            "Revenue growth 4% YoY — steady but below inflation-adjusted peer level",
-            "EBITDA CAGR -22% (1-yr, Tracxn) — margin compression flagged",
-            "Full P&L not public (unlisted Pvt Ltd) — ICRA rationale is key proxy",
+            "DSIR R&D developing robotic systems, IoT sensors, electric actuators — strong product R&D",
+            "Industry 4.0 didactic product line — smart manufacturing expertise in products",
+            "Website infrastructure functional; no modern CMS, API layer, or customer portal",
+            "No cloud migration, SaaS adoption, or digital collaboration tools disclosed",
+            "Cybersecurity: ICRA-compliant; no ISO 27001 or public data policy found",
+            "Largest gap: internal tech infrastructure lags product-layer digital maturity",
         ],
-        "sub_scores": [("FIN01 Revenue",80),("FIN02 Growth",55),("FIN03 EBITDA",42),
-                       ("FIN04 Credit",82),("FIN05 Capital",75),("FIN06 Productivity",70)],
-        "highlight": "ICRA Stable | ₹531 Cr revenue | Self-funded",
-        "risk": "EBITDA CAGR -22% (FY25) — needs full P&L for confirmation",
+        "sub_scores": [("TA01 Digital Infra",65),("TA02 IoT Products",80),("TA03 Cloud/SaaS",60),
+                       ("TA04 R&D Digital",78),("TA05 Cybersecurity",67)],
+        "highlight": "IoT product R&D (80/100) — DSIR-backed, robotic and sensor development",
+        "risk": "Internal cloud/SaaS adoption and cybersecurity framework not evidenced",
     },
     {
-        "code": "IC", "name": "Industry Context", "score": 75, "weight": "10%",
+        "code": "SC", "name": "Skills & Capabilities", "score": 60, "weight": "20%",
         "bullets": [
-            "India pneumatics market: $1.06B (2024) → $1.94B (2033) | CAGR 6.9%",
-            "Make in India + PLI schemes driving domestic manufacturing investment",
-            "China+1 sourcing strategy creating incremental export demand",
-            "Janatics competes with SMC, Festo, Parker in mid-market segment",
-            "End-market spread: pharma, auto, packaging, food, medical, textile, printing",
-            "Industry 4.0 / smart pneumatics trend aligns with Janatics product roadmap",
+            "662 employees — engineering-deep workforce; strong CNC and automation specialists",
+            "DSIR R&D team in place — structured technical innovation capability",
+            "Limited signals of software engineers, data scientists, or digital roles hired",
+            "No public L&D, digital upskilling, or online learning program disclosed",
+            "Management I4.0 awareness evidenced by product decisions; no CDO hire signal",
+            "No hackathon, innovation lab, startup engagement, or employee innovation program",
         ],
-        "sub_scores": [("IC01 Mkt Size",70),("IC02 Growth",78),("IC03 Position",70),
-                       ("IC04 Macro",82),("IC05 Diversity",76)],
-        "highlight": "6.9% market CAGR | Make in India tailwind | 7 end-markets",
-        "risk": "Global competition intensifying — SMC, Festo localizing",
+        "sub_scores": [("SC01 Digital Talent",55),("SC02 Tech Workforce",72),("SC03 Training",50),
+                       ("SC04 Leadership DQ",65),("SC05 Innovation Culture",58)],
+        "highlight": "Engineering-depth workforce; DSIR R&D team in place",
+        "risk": "No digital talent pipeline or upskilling program evidenced publicly",
     },
 ]
 
 for d in dimension_slides:
     slide = prs.slides.add_slide(blank_layout)
 
-    # Header bar
     add_rect(slide, 0, 0, W, Inches(1.1), score_color(d["score"]))
     add_text_box(slide, f"{d['code']}: {d['name']}",
                  Inches(0.3), Inches(0.1), Inches(9.0), Inches(0.55),
                  font_size=20, bold=True, color=WHITE)
-    add_text_box(slide, f"Score: {d['score']}/100   |   Weight: {d['weight']}",
+    add_text_box(slide, f"Score: {d['score']}/100   |   Maturity: {maturity_label(d['score'])}   |   Weight: {d['weight']}",
                  Inches(0.3), Inches(0.6), Inches(9.0), Inches(0.4),
                  font_size=12, color=WHITE)
 
-    # Score badge
     add_rect(slide, Inches(10.8), Inches(0.1), Inches(2.2), Inches(0.9), DARK_BLUE)
     add_text_box(slide, f"{d['score']}/100",
                  Inches(10.8), Inches(0.1), Inches(2.2), Inches(0.9),
                  font_size=24, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 
-    # Bullets
     for bi, bullet in enumerate(d["bullets"]):
         by = Inches(1.25 + bi * 0.87)
         add_rect(slide, Inches(0.25), by + Inches(0.15), Inches(0.08), Inches(0.22),
@@ -294,7 +289,6 @@ for d in dimension_slides:
                      Inches(0.45), by, Inches(8.1), Inches(0.75),
                      font_size=11, color=DARK_GRAY)
 
-    # Sub-scores panel
     panel_x = Inches(8.8)
     add_rect(slide, panel_x, Inches(1.1), Inches(4.3), Inches(0.4), MID_BLUE)
     add_text_box(slide, "Sub-Metric Scores",
@@ -304,22 +298,17 @@ for d in dimension_slides:
     bar_h = Inches(0.52)
     for si, (sm_name, sm_score) in enumerate(d["sub_scores"]):
         sy = Inches(1.55 + si * 0.65)
-        # Label
         add_text_box(slide, sm_name, panel_x, sy, Inches(2.0), bar_h,
                      font_size=9, color=DARK_BLUE)
-        # Background bar
         add_rect(slide, panel_x + Inches(2.05), sy + Inches(0.12),
                  Inches(1.8), Inches(0.28), LIGHT_BLUE)
-        # Filled bar
         bar_w = Inches(1.8 * sm_score / 100)
         add_rect(slide, panel_x + Inches(2.05), sy + Inches(0.12),
                  bar_w, Inches(0.28), score_color(sm_score))
-        # Score label
         add_text_box(slide, str(sm_score),
                      panel_x + Inches(3.9), sy, Inches(0.4), bar_h,
                      font_size=9, bold=True, color=score_color(sm_score))
 
-    # Highlight + Risk footer
     add_rect(slide, 0, Inches(6.85), W * 0.6, Inches(0.55), GREEN)
     add_text_box(slide, f"Key Strength: {d['highlight']}",
                  Inches(0.15), Inches(6.87), Inches(7.8), Inches(0.45),
@@ -329,7 +318,93 @@ for d in dimension_slides:
                  W * 0.6 + Inches(0.1), Inches(6.87), Inches(5.1), Inches(0.45),
                  font_size=9, bold=True, color=WHITE)
 
-# ── Slide 9: Recommendation ────────────────────────────────────────────────────
+# ── Slide 9: Next Best Actions ────────────────────────────────────────────────
+
+slide = prs.slides.add_slide(blank_layout)
+add_rect(slide, 0, 0, W, Inches(1.1), DARK_BLUE)
+add_text_box(slide, "Next Best Actions — Digital Transformation Roadmap",
+             Inches(0.3), Inches(0.15), Inches(12.7), Inches(0.8),
+             font_size=20, bold=True, color=WHITE)
+
+next_actions_deck = [
+    {
+        "rank": "#01  HIGH",
+        "color": RED_C,
+        "title": "Activate B2B Digital Sales Channel",
+        "gap": "SM03: 45/100",
+        "benefit": "+15–20% incremental revenue from direct digital orders within 18 months",
+        "loss": "Global competitors (SMC, Festo) own digital search — every quarter cedes buyer mindshare",
+        "why": "India B2B e-commerce growing 25%+ p.a.; 49-yr brand + 3,500 SKUs = digital-first advantage",
+    },
+    {
+        "rank": "#02  HIGH",
+        "color": RED_C,
+        "title": "Deploy ERP + Supply Chain Visibility",
+        "gap": "OSC02: 50/100",
+        "benefit": "10–15% operational efficiency gain; unlock global OEM export qualifications",
+        "loss": "OEM buyers mandate digital traceability — no ERP = disqualified from high-value RFQs",
+        "why": "China+1 OEM inquiry window is open NOW — digital ops credibility needed to convert",
+    },
+    {
+        "rank": "#03  MEDIUM",
+        "color": AMBER,
+        "title": "Digital Workforce Upskilling Program",
+        "gap": "SC03: 50/100 · SC01: 55/100",
+        "benefit": "Accelerates all digital tool adoption; reduces transformation failure risk by 60%+",
+        "loss": "Technology without people = stranded investment; ERP + e-commerce will underperform",
+        "why": "Digital skills gap widening; early movers gain 2–3 yr head start on talent",
+    },
+    {
+        "rank": "#04  MEDIUM",
+        "color": AMBER,
+        "title": "Smart Factory Showcase — Coimbatore Plant",
+        "gap": "TA01: 65/100 · ST03: 75/100",
+        "benefit": "Credibility proof-by-example; accelerates I4.0 sales cycles; OEM audit readiness",
+        "loss": "Selling I4.0 while running a non-digitized plant is a credibility gap buyers detect",
+        "why": "Janatics owns the tech — fastest credibility play with no new vendor or capex risk",
+    },
+]
+
+col_w = Inches(3.1)
+gap = Inches(0.13)
+start_x = Inches(0.3)
+
+for ci, item in enumerate(next_actions_deck):
+    x = start_x + ci * (col_w + gap)
+    add_rect(slide, x, Inches(1.15), col_w, Inches(0.42), item["color"])
+    add_text_box(slide, item["rank"], x, Inches(1.15), col_w, Inches(0.42),
+                 font_size=10, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    add_rect(slide, x, Inches(1.60), col_w, Inches(0.52), MID_BLUE)
+    add_text_box(slide, item["title"], x + Inches(0.05), Inches(1.62),
+                 col_w - Inches(0.1), Inches(0.48),
+                 font_size=11, bold=True, color=WHITE)
+    add_rect(slide, x, Inches(2.15), col_w, Inches(0.32), LIGHT_BLUE)
+    add_text_box(slide, f"Gap: {item['gap']}", x + Inches(0.05), Inches(2.16),
+                 col_w - Inches(0.1), Inches(0.30),
+                 font_size=8, bold=True, color=DARK_BLUE)
+
+    row_items = [
+        ("Expected Benefit", item["benefit"], RGBColor(0xD5, 0xE8, 0xD4), RGBColor(0x1F, 0x38, 0x64)),
+        ("Cost of Inaction", item["loss"],    RGBColor(0xF8, 0xCE, 0xCC), RGBColor(0x7F, 0x00, 0x00)),
+        ("Why Now",          item["why"],     RGBColor(0xDA, 0xE8, 0xFC), RGBColor(0x1F, 0x38, 0x64)),
+    ]
+    for ri, (label, text, bg, tc) in enumerate(row_items):
+        ry = Inches(2.50 + ri * 1.55)
+        add_rect(slide, x, ry, col_w, Inches(0.30), item["color"] if ri == 0 else (
+            RED_C if ri == 1 else MID_BLUE))
+        add_text_box(slide, label, x + Inches(0.05), ry, col_w, Inches(0.30),
+                     font_size=8, bold=True, color=WHITE)
+        add_rect(slide, x, ry + Inches(0.30), col_w, Inches(1.22), bg)
+        add_text_box(slide, text, x + Inches(0.06), ry + Inches(0.33),
+                     col_w - Inches(0.12), Inches(1.18),
+                     font_size=8, color=tc)
+
+add_text_box(slide, "Maturity band target after initiatives: Siloed → Strategic (67–83)",
+             Inches(0.3), Inches(7.1), Inches(12.7), Inches(0.3),
+             font_size=9, bold=True, color=WHITE, align=PP_ALIGN.CENTER,
+             bg_color=MID_BLUE)
+
+# ── Slide 10: Recommendation ───────────────────────────────────────────────────
 
 slide = prs.slides.add_slide(blank_layout)
 add_rect(slide, 0, 0, W, Inches(1.1), DARK_BLUE)
@@ -337,28 +412,30 @@ add_text_box(slide, "Executive Recommendation",
              Inches(0.3), Inches(0.15), Inches(12.7), Inches(0.8),
              font_size=20, bold=True, color=WHITE)
 
-add_rect(slide, Inches(0.4), Inches(1.2), Inches(12.5), Inches(0.7), GREEN)
-add_text_box(slide, f"DDMR Composite Score: {COMPOSITE}/100 — STRONG  |  Recommendation: Proceed with engagement",
+add_rect(slide, Inches(0.4), Inches(1.2), Inches(12.5), Inches(0.7), score_color(COMPOSITE))
+add_text_box(slide, f"DDMR Composite Score: {COMPOSITE}/100 — {maturity_label(COMPOSITE).upper()}  |  Digital Transformation: Early-Stage Engagement Opportunity",
              Inches(0.4), Inches(1.2), Inches(12.5), Inches(0.7),
              font_size=13, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 
 rec_points = [
     ("Strengths to leverage",
-     "49-year brand with ICRA-validated credit health. Global distribution in 42 countries "
-     "and 17,000+ customers provides revenue resilience. DSIR R&D and 3,500+ SKU portfolio "
-     "enable single-source supplier status with OEMs."),
-    ("Watch points",
-     "EBITDA CAGR of -22% (FY25) requires explanation — request full P&L and management "
-     "commentary on margin drivers. Revenue growth at 4% trails the 6.9% sector CAGR."),
-    ("Immediate due diligence asks",
-     "1. Full audited P&L + balance sheet for FY2023–FY2025. "
-     "2. Customer concentration report (top 10 customers as % of revenue). "
-     "3. Director disclosure and related-party transactions. "
-     "4. Status of expansion into electric actuators / robotics — capex plan."),
+     "DSIR R&D and I4.0 product portfolio demonstrate product-layer digital competence. "
+     "Strong manufacturing base (70k sqm, 3 plants, 3,500+ SKUs) and ICRA Stable credit "
+     "provide a stable foundation for digital investment."),
+    ("Priority gaps",
+     "Digital sales channel (SM03: 45/100) and supply chain visibility (OSC02: 50/100) are "
+     "the two lowest-scoring sub-metrics — quick wins with measurable ROI. Social media "
+     "engagement (SM02: 40/100) requires immediate activation."),
+    ("Recommended DX initiatives",
+     "1. Deploy B2B digital ordering portal and SEO-optimised product catalog. "
+     "2. Publish ERP/SCM roadmap — signals operational maturity to global OEM buyers. "
+     "3. Launch digital upskilling program for engineering workforce (SC03: 50/100). "
+     "4. Appoint digital transformation lead or CDO."),
     ("Opportunity",
-     "Make in India + China+1 export tailwind creates a 3–5 year window for Janatics to "
-     "gain global OEM approvals. A partner with procurement or market access in Europe/Americas "
-     "could accelerate this significantly."),
+     "Janatics' own I4.0 product expertise creates a credibility-led path to internal "
+     "digitization — using their own sensors and automation products to modernize their "
+     "manufacturing is a compelling narrative for global OEM customers assessing vendor "
+     "digital maturity."),
 ]
 
 for ri, (heading, body) in enumerate(rec_points):
@@ -370,11 +447,9 @@ for ri, (heading, body) in enumerate(rec_points):
     add_text_box(slide, body, Inches(3.4), ty + Inches(0.05),
                  Inches(9.4), Inches(1.0), font_size=9, color=DARK_BLUE)
 
-add_text_box(slide, f"Report generated: {DATE_STR}  |  Janatics India Private Limited  |  DDMR v1.0",
+add_text_box(slide, f"Report generated: {DATE_STR}  |  {COMPANY}  |  DDMR v1.0",
              Inches(0.4), Inches(7.1), Inches(12.5), Inches(0.3),
              font_size=8, color=DARK_GRAY, align=PP_ALIGN.CENTER, italic=True)
-
-# ── Save ───────────────────────────────────────────────────────────────────────
 
 out = "/Users/laaksandy/Documents/Claude-testing/DDMR/output/Janatics_DDMR_Deck.pptx"
 prs.save(out)

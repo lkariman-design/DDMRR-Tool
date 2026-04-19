@@ -7,17 +7,40 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<string|null>(null);
 
-  function handleDemo() {
-    setLoading(true);
-    setTimeout(() => router.push("/report?demo=1"), 600);
+  function handleDemo(slug: string) {
+    setLoading(slug);
+    setTimeout(() => router.push(`/report?demo=${slug}`), 600);
   }
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    setLoading("login");
     setTimeout(() => router.push("/dashboard"), 600);
   }
+
+  const demos = [
+    {
+      slug: "janatics",
+      company: "Janatics India Pvt Ltd",
+      sector: "Pneumatics & Industrial Automation",
+      score: "64/100",
+      maturity: "Siloed",
+      revenue: "₹531 Cr Revenue",
+      tag: "Domestic Manufacturer",
+      tagColor: "#1d4ed8",
+    },
+    {
+      slug: "messer",
+      company: "Messer Cutting Systems India Pvt Ltd",
+      sector: "Thermal & Laser Cutting Systems",
+      score: "72/100",
+      maturity: "Strategic",
+      revenue: "₹185 Cr Revenue",
+      tag: "MNC Subsidiary",
+      tagColor: "#16a34a",
+    },
+  ];
 
   return (
     <div className="min-h-screen flex">
@@ -48,22 +71,43 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-slate-50">
         <div className="w-full max-w-md">
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Welcome back</h2>
-          <p className="text-slate-500 text-sm mb-8">Sign in to your account to continue</p>
+          <p className="text-slate-500 text-sm mb-6">Sign in to your account to continue</p>
 
-          <button onClick={handleDemo} disabled={loading}
-            className="w-full mb-6 p-4 rounded-xl border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all group text-left disabled:opacity-60">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles size={16} className="text-blue-600"/>
-                  <span className="text-blue-700 font-semibold text-sm">Try Live Demo</span>
-                </div>
-                <p className="text-slate-600 text-sm">Full DDMR report for <strong>Janatics India Pvt Ltd</strong></p>
-                <p className="text-slate-400 text-xs mt-1">Score: 75.7/100 · ₹531 Cr Revenue · Pneumatics & Automation</p>
-              </div>
-              <ArrowRight size={18} className="text-blue-500 group-hover:translate-x-1 transition-transform"/>
+          {/* Demo section */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={14} className="text-blue-600"/>
+              <span className="text-blue-700 font-semibold text-xs uppercase tracking-wider">Try Live Demos</span>
             </div>
-          </button>
+            <div className="space-y-2.5">
+              {demos.map(d => (
+                <button key={d.slug} onClick={() => handleDemo(d.slug)}
+                  disabled={loading !== null}
+                  className="w-full p-3.5 rounded-xl border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition-all group text-left disabled:opacity-60">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{background: d.tagColor}}>{d.tag}</span>
+                      </div>
+                      <p className="text-slate-800 text-sm font-semibold truncate">{d.company}</p>
+                      <p className="text-slate-500 text-xs mt-0.5">{d.sector}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-blue-700 font-bold text-xs">{d.score}</span>
+                        <span className="text-slate-300 text-xs">·</span>
+                        <span className="text-slate-500 text-xs">{d.maturity}</span>
+                        <span className="text-slate-300 text-xs">·</span>
+                        <span className="text-slate-500 text-xs">{d.revenue}</span>
+                      </div>
+                    </div>
+                    {loading === d.slug
+                      ? <svg className="animate-spin h-4 w-4 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                      : <ArrowRight size={16} className="text-blue-500 group-hover:translate-x-1 transition-transform flex-shrink-0"/>
+                    }
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-slate-200"/>
@@ -82,9 +126,9 @@ export default function LoginPage() {
               <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"/>
             </div>
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading !== null}
               className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-700 text-white font-semibold text-sm transition flex items-center justify-center gap-2 disabled:opacity-60">
-              {loading
+              {loading === "login"
                 ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
                 : <><Lock size={15}/><span>Sign In</span></>}
             </button>
