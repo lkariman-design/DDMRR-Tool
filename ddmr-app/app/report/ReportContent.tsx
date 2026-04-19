@@ -281,12 +281,13 @@ export default function ReportContent() {
           </div>
           <div className="flex items-center gap-2">
             {[
-              {icon:FileSpreadsheet,label:"Excel",ext:"xlsx"},
-              {icon:FileText,label:"Word",ext:"docx"},
-              {icon:Presentation,label:"Deck",ext:"pptx"},
-            ].map(({icon:Icon,label,ext})=>(
+              {icon:FileSpreadsheet,label:"Excel",ext:"xlsx",color:"text-emerald-600"},
+              {icon:FileText,label:"Word",ext:"docx",color:"text-blue-600"},
+              {icon:Presentation,label:"Deck",ext:"pptx",color:"text-orange-500"},
+              {icon:FileText,label:"PDF",ext:"pdf",color:"text-red-500"},
+            ].map(({icon:Icon,label,ext,color})=>(
               <a key={ext} href={`/api/download?format=${ext}`} download
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium transition">
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 ${color} text-xs font-medium transition`}>
                 <Icon size={13}/>{label}
               </a>
             ))}

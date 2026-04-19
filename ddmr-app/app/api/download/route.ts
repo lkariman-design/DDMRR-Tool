@@ -21,13 +21,18 @@ const CONFIG = {
     file:   "Janatics_DDMR_Deck.pptx",
     mime:   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   },
+  pdf: {
+    script: "generate_pdf.py",
+    file:   "Janatics_DDMR_Report.pdf",
+    mime:   "application/pdf",
+  },
 } as const;
 
 export async function GET(req: NextRequest) {
   const format = req.nextUrl.searchParams.get("format") as keyof typeof CONFIG;
 
   if (!CONFIG[format]) {
-    return NextResponse.json({ error: "Invalid format. Use xlsx, docx, or pptx." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid format. Use xlsx, docx, pptx, or pdf." }, { status: 400 });
   }
 
   const { script, file, mime } = CONFIG[format];
