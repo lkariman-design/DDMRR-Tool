@@ -113,7 +113,7 @@ ws.row_dimensions[1].height = 8
 for r in range(2, 6):
     ws.row_dimensions[r].height = 20
 ws.merge_cells("B2:F2")
-ws["B2"] = "DDMR — DUE DILIGENCE & MARKET REPORT"
+ws["B2"] = "DDMR — DIGITAL DIAGNOSTIC AND MATURITY REPORT"
 ws["B2"].font = Font(name="Calibri", bold=True, size=16, color=WHITE)
 ws["B2"].fill = header_fill(DARK_BLUE)
 ws["B2"].alignment = Alignment(horizontal="center", vertical="center")

@@ -1,4 +1,4 @@
-# DDMR — Due Diligence & Market Research
+# DDMR — Digital Diagnostic and Maturity Report
 
 ## Project overview
 AI-powered company assessment pipeline producing scored reports across 5 dimensions:

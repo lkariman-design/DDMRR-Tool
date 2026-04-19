@@ -76,7 +76,7 @@ slide = prs.slides.add_slide(blank_layout)
 add_rect(slide, 0, 0, W, H, DARK_BLUE)
 add_rect(slide, 0, Inches(4.8), W, Inches(2.7), MID_BLUE)
 
-add_text_box(slide, "DUE DILIGENCE & MARKET REPORT",
+add_text_box(slide, "DIGITAL DIAGNOSTIC AND MATURITY REPORT",
              Inches(0.8), Inches(1.0), Inches(11.7), Inches(0.8),
              font_size=28, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 

@@ -50,7 +50,7 @@ for section in doc.sections:
 doc.add_paragraph()
 t = doc.add_paragraph()
 t.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = t.add_run("DUE DILIGENCE & MARKET REPORT (DDMR)")
+run = t.add_run("DIGITAL DIAGNOSTIC AND MATURITY REPORT (DDMR)")
 run.font.bold  = True
 run.font.size  = Pt(22)
 run.font.color.rgb = RGBColor.from_string("1F3864")

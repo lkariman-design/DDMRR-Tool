@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(python3 *)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(pip3 *)",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(open *)",
+      "Bash(ls *)",
+      "Bash(ls)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(which *)",
+      "Bash(brew *)",
+      "Bash(gh *)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch"
+    ]
+  }
+}

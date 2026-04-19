@@ -30,7 +30,7 @@ export default function LoginPage() {
           <span className="text-white text-xl font-bold tracking-tight">DDMR Tool</span>
         </div>
         <div>
-          <div className="text-blue-300 text-sm font-semibold uppercase tracking-widest mb-4">Due Diligence & Market Report</div>
+          <div className="text-blue-300 text-sm font-semibold uppercase tracking-widest mb-4">Digital Diagnostic and Maturity Report</div>
           <h1 className="text-white text-4xl font-bold leading-tight mb-6">Executive-grade<br/>company intelligence<br/>in minutes.</h1>
           <p className="text-blue-200 text-lg leading-relaxed mb-10">Powered by public data, ICRA ratings, and AI scoring — get a complete 5-dimension report with evidence citations.</p>
           <div className="grid grid-cols-2 gap-4">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DDMR Tool — Due Diligence & Market Report",
+  title: "DDMR Tool — Digital Diagnostic and Maturity Report",
   description: "Executive-grade company assessment and scoring platform",
 };
 

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/laaksandy/.claude/**)",
+      "Bash(npm search *)",
+      "Bash(python3 -c \"import sys,json; pkgs=json.load\\(sys.stdin\\); [print\\(p['name'], p.get\\('description',''\\)[:80]\\) for p in pkgs[:5]]\")",
+      "Bash(python3 -c \"import sys,json; pkgs=json.load\\(sys.stdin\\); [print\\(p['name'], p.get\\('description',''\\)[:80]\\) for p in pkgs[:10]]\")",
+      "WebSearch",
+      "WebFetch(domain:www.zaubacorp.com)",
+      "WebFetch(domain:www.janatics.com)",
+      "WebFetch(domain:www.icra.in)",
+      "WebFetch(domain:www.janaticspneumatics.com)",
+      "Bash(python3 generate_scorecard.py)",
+      "Bash(python3 generate_report.py)",
+      "Bash(python3 generate_deck.py)",
+      "Bash(open *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npx create-next-app@latest ddmr-app --typescript --tailwind --app --no-eslint --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /tmp/test.xlsx -w \"%{http_code} %{size_download}bytes\" \"http://localhost:3000/api/download?format=xlsx\")",
+      "Bash(curl -s -o /tmp/test.xlsx -w \"%{http_code} type:%{content_type} size:%{size_download}\" \"http://localhost:3000/api/download?format=xlsx\")"
+    ]
+  }
+}
