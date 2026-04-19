@@ -315,24 +315,35 @@ export default function ReportContent() {
   }
 
   const data = isGenerated ? generatedData : (demoSlug === "messer" ? DEMO_MESSER : DEMO);
+  const [downloadError, setDownloadError] = useState("");
 
   async function downloadGenerated(format: string) {
     setDownloading(format);
+    setDownloadError("");
     try {
       const res = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format, data }),
       });
-      if (!res.ok) { setDownloading(null); return; }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Export failed" }));
+        setDownloadError(err.error || "Export failed. Please try again.");
+        setDownloading(null);
+        return;
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${(data.company || "DDMR").replace(/[^a-z0-9]/gi, "_")}_DDMR.${format}`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
-    } catch {}
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (err) {
+      setDownloadError("Download failed. Please try again.");
+    }
     setDownloading(null);
   }
 
@@ -381,6 +392,12 @@ export default function ReportContent() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-10">
+        {downloadError && (
+          <div className="mb-4 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+            <span>{downloadError}</span>
+            <button onClick={()=>setDownloadError("")} className="text-red-400 hover:text-red-600 ml-4 text-lg leading-none">×</button>
+          </div>
+        )}
         {isGenerated && (
           <div className="mb-6 px-4 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>

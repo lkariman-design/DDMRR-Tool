@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
 function maturityLabel(s: number): string {
   if (s >= 84) return "Future Ready";
   if (s >= 67) return "Strategic";
