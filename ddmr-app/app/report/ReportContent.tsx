@@ -139,11 +139,10 @@ export default function ReportContent() {
               {icon:FileText,label:"Word",ext:"docx"},
               {icon:Presentation,label:"Deck",ext:"pptx"},
             ].map(({icon:Icon,label,ext})=>(
-              <button key={ext}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium transition"
-                onClick={()=>alert(`Download feature: connect your Python generator to /api/download?format=${ext}`)}>
+              <a key={ext} href={`/api/download?format=${ext}`} download
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium transition">
                 <Icon size={13}/>{label}
-              </button>
+              </a>
             ))}
           </div>
         </div>
