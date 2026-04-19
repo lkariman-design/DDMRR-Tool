@@ -265,9 +265,11 @@ export default function ReportContent() {
   const isGenerated = reportId !== null;
 
   const [generatedData, setGeneratedData] = useState<any>(null);
+  const [reportNotFound, setReportNotFound] = useState(false);
   const [expanded, setExpanded] = useState<string|null>(null);
   const [loaded, setLoaded] = useState(false);
   const [downloading, setDownloading] = useState<string|null>(null);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(()=>{
     if (reportId) {
@@ -293,12 +295,32 @@ export default function ReportContent() {
               directors: "",
             },
           });
+        } else {
+          setReportNotFound(true);
         }
-      } catch {}
+      } catch { setReportNotFound(true); }
     }
     const t=setTimeout(()=>setLoaded(true),300);
     return()=>clearTimeout(t);
   },[reportId]);
+
+  if (isGenerated && reportNotFound) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <Building2 size={24} className="text-slate-400"/>
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Report not found</h2>
+          <p className="text-slate-500 text-sm mb-6">This report is stored in the browser where it was generated. Reports cannot be shared via URL.</p>
+          <button onClick={()=>router.push("/dashboard")}
+            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isGenerated && !generatedData) {
     return (
@@ -315,7 +337,6 @@ export default function ReportContent() {
   }
 
   const data = isGenerated ? generatedData : (demoSlug === "messer" ? DEMO_MESSER : DEMO);
-  const [downloadError, setDownloadError] = useState("");
 
   async function downloadGenerated(format: string) {
     setDownloading(format);
