@@ -272,6 +272,23 @@ async function buildPptx(data: any): Promise<Buffer> {
 async function buildPdf(data: any): Promise<Buffer> {
   const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
 
+  // pdf-lib standard fonts only support Latin-1; replace common Unicode chars
+  function sanitize(text: string): string {
+    return (text || "")
+      .replace(/₹/g, "Rs.")
+      .replace(/[""]/g, '"')
+      .replace(/['']/g, "'")
+      .replace(/[–—]/g, "-")
+      .replace(/…/g, "...")
+      .replace(/→/g, "->")
+      .replace(/←/g, "<-")
+      .replace(/•/g, "*")
+      .replace(/™/g, "(TM)")
+      .replace(/®/g, "(R)")
+      .replace(/©/g, "(C)")
+      .replace(/[^\x00-\xFF]/g, "?");
+  }
+
   function hex(h: string) {
     const r = parseInt(h.slice(0, 2), 16) / 255;
     const g = parseInt(h.slice(2, 4), 16) / 255;
@@ -293,7 +310,7 @@ async function buildPdf(data: any): Promise<Buffer> {
     return { page, cy: [H - M] };
   }
   function wrap(text: string, maxW: number, sz: number, f: any): string[] {
-    const words = (text || "").split(" ");
+    const words = sanitize(text).split(" ");
     const lines: string[] = [];
     let line = "";
     for (const w of words) {
@@ -313,44 +330,47 @@ async function buildPdf(data: any): Promise<Buffer> {
     }
     return y;
   }
+  function dt(page: any, text: string, opts: any) {
+    page.drawText(sanitize(text), opts);
+  }
 
   // Page 1: Cover
   {
     const { page } = newPage();
     page.drawRectangle({ x: 0, y: H - 210, width: W, height: 210, color: dark });
-    page.drawText("DDMR REPORT", { x: M, y: H - 38, size: 12, font: fontB, color: hex("60a5fa") });
-    page.drawText("Digital Diagnostic & Maturity Report", { x: M, y: H - 58, size: 9, font: fontN, color: hex("93c5fd") });
+    dt(page, "DDMR REPORT", { x: M, y: H - 38, size: 12, font: fontB, color: hex("60a5fa") });
+    dt(page, "Digital Diagnostic & Maturity Report", { x: M, y: H - 58, size: 9, font: fontN, color: hex("93c5fd") });
     let cy = H - 95;
     cy = drawWrapped(page, data.company, M, cy, 26, rgb(1, 1, 1), W - M * 2, true) - 8;
     cy = drawWrapped(page, data.sector || "", M, cy, 11, hex("93c5fd"), W - M * 2);
     const ml = maturityLabel(data.composite);
     const sc = scoreCol[ml] || hex("2563eb");
     page.drawRectangle({ x: M, y: cy - 50, width: 190, height: 38, color: sc });
-    page.drawText(`${data.composite}/100  —  ${ml}`, { x: M + 10, y: cy - 36, size: 14, font: fontB, color: rgb(1, 1, 1) });
-    page.drawText(`Report Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}`, { x: M, y: M, size: 8, font: fontN, color: gray });
+    dt(page, `${data.composite}/100  -  ${ml}`, { x: M + 10, y: cy - 36, size: 14, font: fontB, color: rgb(1, 1, 1) });
+    dt(page, `Report Date: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}`, { x: M, y: M, size: 8, font: fontN, color: gray });
   }
 
   // Page 2: Summary + Profile + Highlights
   {
     const { page } = newPage();
     let y = H - M;
-    page.drawText("Executive Summary", { x: M, y, size: 15, font: fontB, color: dark }); y -= 22;
+    dt(page, "Executive Summary", { x: M, y, size: 15, font: fontB, color: dark }); y -= 22;
     y = drawWrapped(page, data.summary || "", M, y, 10, textDark, W - M * 2) - 12;
-    page.drawText("Company Profile", { x: M, y, size: 13, font: fontB, color: dark }); y -= 18;
+    dt(page, "Company Profile", { x: M, y, size: 13, font: fontB, color: dark }); y -= 18;
     for (const [k, v] of [["Founded", data.meta?.founded], ["HQ", data.meta?.hq], ["Revenue", data.meta?.revenue], ["Employees", data.meta?.employees], ["Products", data.meta?.products]].filter(([, v]) => v)) {
-      page.drawText(`${k}:`, { x: M, y, size: 9, font: fontB, color: textDark });
-      page.drawText(v as string, { x: M + 75, y, size: 9, font: fontN, color: textDark });
+      dt(page, `${k}:`, { x: M, y, size: 9, font: fontB, color: textDark });
+      dt(page, v as string, { x: M + 75, y, size: 9, font: fontN, color: textDark });
       y -= 14;
     }
     y -= 8;
-    page.drawText("Key Findings", { x: M, y, size: 13, font: fontB, color: dark }); y -= 18;
+    dt(page, "Key Findings", { x: M, y, size: 13, font: fontB, color: dark }); y -= 18;
     for (const h of data.highlights) {
       const c = h.type === "positive" ? hex("16a34a") : hex("d97706");
-      page.drawText(h.type === "positive" ? "+" : "!", { x: M, y, size: 10, font: fontB, color: c });
+      dt(page, h.type === "positive" ? "+" : "!", { x: M, y, size: 10, font: fontB, color: c });
       y = drawWrapped(page, h.text, M + 14, y, 9.5, textDark, W - M * 2 - 14) - 4;
     }
     y -= 8;
-    page.drawText("Dimension Scores", { x: M, y, size: 13, font: fontB, color: dark }); y -= 18;
+    dt(page, "Dimension Scores", { x: M, y, size: 13, font: fontB, color: dark }); y -= 18;
     const colW2 = (W - M * 2) / 5;
     for (let i = 0; i < data.dimensions.length; i++) {
       const d = data.dimensions[i];
@@ -358,9 +378,9 @@ async function buildPdf(data: any): Promise<Buffer> {
       const c2 = scoreCol[ml2] || hex("2563eb");
       const x = M + i * colW2;
       page.drawRectangle({ x, y: y - 48, width: colW2 - 4, height: 50, color: hex("f8fafc") });
-      page.drawText(d.score.toString(), { x: x + colW2 / 2 - fontB.widthOfTextAtSize(d.score.toString(), 18) / 2, y: y - 14, size: 18, font: fontB, color: c2 });
-      page.drawText(d.name.split(" ")[0], { x: x + 4, y: y - 28, size: 7, font: fontN, color: textDark });
-      page.drawText(ml2, { x: x + 4, y: y - 40, size: 7, font: fontB, color: c2 });
+      dt(page, d.score.toString(), { x: x + colW2 / 2 - fontB.widthOfTextAtSize(d.score.toString(), 18) / 2, y: y - 14, size: 18, font: fontB, color: c2 });
+      dt(page, d.name.split(" ")[0], { x: x + 4, y: y - 28, size: 7, font: fontN, color: textDark });
+      dt(page, ml2, { x: x + 4, y: y - 40, size: 7, font: fontB, color: c2 });
     }
   }
 
@@ -371,17 +391,17 @@ async function buildPdf(data: any): Promise<Buffer> {
     const ml3 = maturityLabel(d.score);
     const c3 = scoreCol[ml3] || hex("2563eb");
     page.drawRectangle({ x: 0, y: H - 52, width: W, height: 52, color: hex("f8fafc") });
-    page.drawText(`${d.code}: ${d.name}`, { x: M, y: H - 32, size: 15, font: fontB, color: dark });
-    page.drawText(`${d.score}/100 — ${ml3}`, { x: W - M - 100, y: H - 32, size: 12, font: fontB, color: c3 });
+    dt(page, `${d.code}: ${d.name}`, { x: M, y: H - 32, size: 15, font: fontB, color: dark });
+    dt(page, `${d.score}/100 - ${ml3}`, { x: W - M - 100, y: H - 32, size: 12, font: fontB, color: c3 });
     y = H - 66;
     y = drawWrapped(page, d.insight || "", M, y, 10, hex("374151"), W - M * 2) - 12;
-    page.drawText("Sub-metric Analysis", { x: M, y, size: 12, font: fontB, color: dark }); y -= 18;
+    dt(page, "Sub-metric Analysis", { x: M, y, size: 12, font: fontB, color: dark }); y -= 18;
     for (const sm of d.submetrics) {
       if (y < 80) break;
       const ml4 = maturityLabel(sm.score);
       const c4 = scoreCol[ml4] || hex("2563eb");
-      page.drawText(`${sm.code}  ${sm.name}`, { x: M, y, size: 9.5, font: fontB, color: textDark });
-      page.drawText(`${sm.score}/100`, { x: W - M - 50, y, size: 9.5, font: fontB, color: c4 });
+      dt(page, `${sm.code}  ${sm.name}`, { x: M, y, size: 9.5, font: fontB, color: textDark });
+      dt(page, `${sm.score}/100`, { x: W - M - 50, y, size: 9.5, font: fontB, color: c4 });
       y -= 13;
       y = drawWrapped(page, sm.evidence || "", M + 10, y, 8.5, gray, W - M * 2 - 10) - 6;
     }
@@ -391,19 +411,19 @@ async function buildPdf(data: any): Promise<Buffer> {
   {
     const { page } = newPage();
     page.drawRectangle({ x: 0, y: H - 50, width: W, height: 50, color: dark });
-    page.drawText("Next Best Actions", { x: M, y: H - 32, size: 15, font: fontB, color: rgb(1, 1, 1) });
+    dt(page, "Next Best Actions", { x: M, y: H - 32, size: 15, font: fontB, color: rgb(1, 1, 1) });
     let y = H - 68;
     for (const a of data.nextActions) {
       if (y < 80) break;
       const c5 = a.priorityColor ? hex(a.priorityColor.replace("#", "")) : hex("dc2626");
       page.drawRectangle({ x: M - 3, y: y - 2, width: 5, height: 16, color: c5 });
-      page.drawText(`#${a.rank}  [${a.priority}]  ${a.title || ""}`, { x: M + 8, y, size: 11, font: fontB, color: dark }); y -= 16;
+      dt(page, `#${a.rank}  [${a.priority}]  ${a.title || ""}`, { x: M + 8, y, size: 11, font: fontB, color: dark }); y -= 16;
       y = drawWrapped(page, `Addresses: ${a.dimension || ""}`, M + 8, y, 8.5, gray, W - M * 2) - 3;
       y = drawWrapped(page, a.initiative || "", M + 8, y, 9, textDark, W - M * 2) - 3;
       y = drawWrapped(page, `Benefit: ${a.benefit || ""}`, M + 8, y, 8.5, hex("15803d"), W - M * 2) - 3;
       y = drawWrapped(page, `Why Now: ${a.whyNow || ""}`, M + 8, y, 8.5, hex("1d4ed8"), W - M * 2) - 10;
     }
-    page.drawText("Based on publicly available information · AI-generated · Verify independently before decisions", { x: M, y: M, size: 8, font: fontN, color: gray });
+    dt(page, "Based on publicly available information - AI-generated - Verify independently before decisions", { x: M, y: M, size: 8, font: fontN, color: gray });
   }
 
   return Buffer.from(await pdfDoc.save());
